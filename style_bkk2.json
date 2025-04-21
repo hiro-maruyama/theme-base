@@ -1,0 +1,472 @@
+{
+    "version": 8,
+    "name": "base KK Bangkok",
+    "metadata": {},
+    "sources": {   
+    "pmt": {
+      "type": "vector",
+      "url":"pmtiles://./bkk_lite/bkk_lite.pmtiles"
+    },
+
+    "lcrpgr": {
+      "type": "vector",
+      "url": "pmtiles://./polygon1km_pop-dis-lcrpgr.pmtiles"
+    }
+  },
+  "layers": [
+
+    {
+      "id": "minor_roads_border",
+      "type": "line",
+      "source": "pmt",
+      "source-layer": "minor_roads",
+      "minzoom": 12,
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-width": {
+          "base": 1.2,
+          "stops": [
+            [
+              10,
+              1
+            ],
+            [
+              14,
+              4
+            ],
+            [
+              16,
+              8
+            ],
+            [
+              20,
+              12
+            ]
+          ]
+        },
+        "line-color": {
+          "stops": [
+            [
+              14,
+              "#DDDDDD"
+            ],
+            [
+              15,
+              "#CCCCCC"
+            ]
+          ]
+        }
+      }
+    },   
+    {
+        "id": "minor_roads",
+        "type": "line",
+        "source": "pmt",
+        "source-layer": "minor_roads",
+        "minzoom": 10,
+        "layout": {
+          "line-cap": "round",
+          "line-join": "round"
+        },
+        "paint": {
+          "line-width": {
+            "base": 1.2,
+            "stops": [
+              [
+                10,
+                0.5
+              ],
+              [
+                14,
+                3
+              ],
+              [
+                16,
+                6
+              ],
+              [
+                20,
+                10
+              ]
+            ]
+          },
+          "line-color": "#EEEEEE",
+          "line-opacity": [
+            "case",
+            [
+              "get",
+              "tunnel"
+            ],
+            0.7,
+            1
+          ]
+        }
+    },
+
+    {
+      "id": "major_roads_border",
+      "type": "line",
+      "source": "pmt",
+      "source-layer": "major_roads",
+      "minzoom": 8,
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-width": {
+          "base": 2,
+          "stops": [
+            [
+              8,
+              3
+            ],
+            [
+              14,
+              6
+            ],
+            [
+              16,
+              13
+            ],
+            [
+              17,
+              28
+            ],
+            [
+              24,
+              3330
+            ]
+          ]
+        },
+        "line-color": {
+          "stops": [
+            [
+              12,
+              "#CCCCCC"
+            ],
+            [
+              14,
+              "#FFD230"
+            ]
+          ]
+        }
+      }
+    },    
+    {
+        "id": "major_roads",
+        "type": "line",
+        "source": "pmt",
+        "source-layer": "major_roads",
+        "minzoom": 5,
+        "layout": {
+          "line-cap": "round",
+          "line-join": "round"
+        },
+        "paint": {
+          "line-width": {
+            "base": 2,
+            "stops": [
+              [
+                5,
+                0.1
+              ],
+              [
+                6,
+                1
+              ],
+              [
+                8,
+                2
+              ],
+              [
+                14,
+                5
+              ],
+              [
+                16,
+                11
+              ],
+              [
+                17,
+                26
+              ],
+              [
+                24,
+                3328
+              ]
+            ]
+          },
+          "line-color": {
+            "stops": [
+              [
+                13,
+                "#D0B8BB"
+              ],
+              [
+                14,
+                "#FDEBD0"
+              ]
+            ]
+          },
+          "line-opacity": [
+            "case",
+            [
+              "get",
+              "tunnel"
+            ],
+            0.7,
+            1
+          ]
+        }
+      },
+
+      {
+        "id": "rail_border",
+        "type": "line",
+        "source": "pmt",
+        "source-layer": "rail",
+        "minzoom": 6,
+        "paint": {
+          "line-color": [
+            "coalesce",
+            [
+              "get",
+              "color"
+            ],
+            "#BBBBBB"
+          ],
+          "line-width": {
+            "base": 2,
+            "stops": [
+              [
+                6,
+                3
+              ],
+              [
+                15,
+                5
+              ],
+              [
+                19,
+                9
+              ],
+              [
+                24,
+                257
+              ]
+            ]
+          },
+          "line-opacity": [
+            "case",
+            [
+              "get",
+              "tunnel"
+            ],
+            0.7,
+            1
+          ]
+        }
+      },
+      {
+        "id": "rail",
+        "type": "line",
+        "source": "pmt",
+        "source-layer": "rail",
+        "minzoom": 6,
+        "paint": {
+          "line-color": "#FFFFFF",
+          "line-width": {
+            "base": 2,
+            "stops": [
+              [
+                6,
+                2
+              ],
+              [
+                15,
+                4
+              ],
+              [
+                19,
+                8
+              ],
+              [
+                24,
+                256
+              ]
+            ]
+          },
+          "line-dasharray": [
+            4,
+            4
+          ]
+        }
+      },
+
+    {
+        "id": "lcrpgrpl-layer",
+        "source": "lcrpgr",
+        "source-layer": "polygon1km_pop-dis-lcrpgr",
+        "type": "fill",
+        "paint": {
+            "fill-color": [
+                "interpolate",
+                ["linear"],
+                ["get", "lcrpgrpl"],
+                -50000, "#ffffff",
+                -43669, "#000000",
+                -146.3, "#9932cc", 
+                -23,    "#a73fd3",
+                -2,     "#ba7fd3",
+                -1,     "#c6a9d3",
+                -0.0142, "#cec2d3",
+  
+                -0.00005, "#808080",
+                -0.00001, "#dcdcdc",
+                0,        "#ffffe0",
+                0.00011, "#fffacd",
+                0.00015, "#ffff00",
+                0.00025, "#ffd700",
+                0.00056, "#ffd700",
+                0.0054, "#ffffff",
+                0.00548, "#0f5926",
+                0.01,"#12652c",
+                0.015, "#147231",
+                0.02, "#167f37",
+                0.025,  "#188c3d",
+                0.03, "#1a9641",
+                0.1, "#58b453",
+                0.3, "#96d365",
+                0.8, "#c4e687",
+                1.0, "#ebf7ad",
+                2.0, "#ffedab",
+                4.0,  "#fec981",
+                8.0, "#f99d59",
+                16.0, "#e85b3b",
+                34.0, "#d7191c",
+                260.4, "#ff1e21",
+                260.5, "#000000"
+            ],
+            "fill-opacity": 0.5
+        },     
+        "layout": {
+            "visibility": "none"
+        }          
+    },            
+    {
+        "id": "lcrpgr-layer",
+        "source": "lcrpgr",
+        "source-layer": "polygon1km_pop-dis-lcrpgr",
+        "type": "fill",
+        "paint": {
+            "fill-color": [
+                "interpolate",
+                ["linear"],
+                ["get", "lcrpgr"],
+                -43669, "#000000",
+                -146.3, "#9932cc", 
+                -23,    "#a73fd3",
+                -2,     "#ba7fd3",
+                -1,     "#c6a9d3",
+                -0.0142, "#cec2d3",
+                -0.014,"#ffffff",
+                0.0054, "#ffffff",
+                0.00548, "#0f5926",
+                0.01,"#12652c",
+                0.015, "#147231",
+                0.02, "#167f37",
+                0.025,  "#188c3d",
+                0.03, "#1a9641",
+                0.1, "#58b453",
+                0.3, "#96d365",
+                0.8, "#c4e687",
+                1.0, "#ebf7ad",
+                2.0, "#ffedab",
+                4.0,  "#fec981",
+                8.0, "#f99d59",
+                16.0, "#e85b3b",
+                34.0, "#d7191c",
+                260.4, "#ff1e21",
+                260.5, "#000000"
+            ],
+            "fill-opacity": 0.5
+        },
+        "layout": {
+            "visibility": "visible"
+        }
+    },            
+    {
+        "id": "pgr-layer",
+        "source": "lcrpgr",
+        "source-layer": "polygon1km_pop-dis-lcrpgr",
+        "type": "fill",
+        "paint": {
+            "fill-color": [
+                "interpolate",
+                ["linear"],
+                ["get", "pgr"],
+                -0.022282, "#0571b0",
+                -0.0055, "#63a9cf",
+                -0.002, "#b4d6e6",
+                -0.001, "#ffffff",
+                0.001,  "#ffffff",
+                0.010, "#f6e5dd",
+                0.016, "#f5c0a9",
+                0.02,  "#ef9377",
+                0.027, "#dd494c",
+                0.105190, "#ca0020"
+            ],
+            "fill-opacity": 0.5                    
+        },  
+        "layout": {
+            "visibility": "none"
+        }                 
+    },
+    {
+        "id": "lcr-layer",
+        "source": "lcrpgr",
+        "source-layer": "polygon1km_pop-dis-lcrpgr",
+        "type": "fill",
+        "paint": {
+            "fill-color": [
+                "interpolate",
+                ["linear"],
+                ["get", "lcr"],
+                0, "#ffffff",
+                0.000184, "#ffcccc",
+                0.001648, "#ff9999",
+                0.005405, "#ff6666",
+                0.014908, "#ff3333",
+                0.2, "#ff0000",
+                0.2001, "#000000",
+                255, "#000000"
+            ],
+            "fill-opacity": 0.5
+        },
+        "layout": {
+            "visibility": "none"
+        }                          
+    },
+  
+    {
+        "id": "buildings",
+        "type": "fill-extrusion",
+        "source": "pmt",
+        "source-layer": "buildings",
+        "minzoom": 12,
+        "paint": {
+              "fill-extrusion-height": [
+                "literal", 20
+              ],
+              "fill-extrusion-opacity": 0.6,
+              "fill-extrusion-color": "#C8C8C8",
+              "fill-extrusion-base": 0
+
+        }
+    }
+  ]
+} 
