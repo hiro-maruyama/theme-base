@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+  
+        <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.css' />      
+        <script src='https://unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.js'></script> 
+
+        <title>Sri Lanka damage by cyclone Ditwa</title>
+    </head>
+    <body>
+        <style>
+            .map-overlay {
+                font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+                position: absolute;
+                width: 180px;
+                line-height:1;
+                top: 10px;
+                left: 0;
+                padding: 10px;
+                background-color: aliceblue;
+            }
+    
+            .map-overlay fieldset {
+                border: none;
+                padding: 0;
+                margin: 0 0 10px;
+            }
+
+           .home-button {
+                position: absolute;
+                top: 2px;
+                left: 0px;
+                background-color: taransparent;
+                border: none;
+                padding: 2px 5px;
+                cursor: pointer;
+                z-index: 1;
+            }
+            .home-button fieldset{
+                border: none;
+                padding: 0;
+                margin: 0 0 10px;
+            }
+
+            .url-input{
+                position:absolute;
+                top: 10px;
+                left: 200px;
+            }
+
+            .url-input input[type="text"] {
+                width: 500px;
+                padding: 5px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+            }
+
+            #zoom-indicator {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                padding: 4px 8px;
+                background: rgba(255, 255, 255, 0.85);
+                font: 12px/16px 'Helvetica Neue', Arial, sans-serif;
+                border-radius: 4px;
+                z-index: 2;
+                pointer-events: none; /* マップ操作を邪魔しない */
+           }    
+        </style>
+
+
+        <div id="map" style="height: 100vh"></div>
+<!--       <script type="module" src="/bangkok/bangkok-3.js"></script> -->
+        <div class="map-overlay">
+          <fieldset>
+            <label for="transparency">Set transparency</label>
+              <p>11-30 obtained Sentinel-2:
+                 <span id="transparencyValue" style="margin-left:10px;">5</span>
+              </p> 
+              <input type="range" id="transparency" name="transparency" 
+                 min="0" max="10" step="1" value="10" >
+          </fieldset>
+          <fieldset>
+<!--           <label for="transparency">Set transparency</label>  --> 
+              <p>12-02 obtained Sentinel-2: 
+                <span id="transparencyValue2" style="margin-left:10px;">5</span>
+              </p>
+              <input type="range" id="transparency2" name="transparency2" 
+                 min="0" max="10" step="1" value="10" />
+          </fieldset>              
+          <fieldset>
+            <input type="checkbox" id="osm-layer" name="osm" checked>
+              <label for="none">OpenStreetMap</label> 
+          </fieldset>    
+        </div>
+        <div class="url-input">
+            <input type="text" id="url" name="url" placeholder="input url of cog file (e.g.https://-------)">
+        </div>
+        <div id="zoom-indicator">Zoom: 7.0</div>
+       <script>
+// parameter setting
+let zopacity1=1.0;
+let zopacity2=1.0;
+
+const transparencyValueSpan = document.getElementById('transparencyValue');
+const transparencyInput = document.getElementById('transparency');
+transparencyValueSpan.innerHTML =`${transparencyInput.value / 10} `;
+
+const transparencyValueSpan2 = document.getElementById('transparencyValue2');
+const transparencyInput2 = document.getElementById('transparency2');
+transparencyValueSpan2.innerHTML =`${transparencyInput2.value / 10} `;
+
+const urlInput = document.getElementById('url');
+
+const map=new maplibregl.Map({
+    container: 'map',
+        center: [80.896,7.754],
+        zoom: 7,
+        fadeDuration: 0,
+        prefetchZoomDelta: 1,
+        style:{
+            version: 8,
+            sources: {      
+                osm:{
+                    type: 'raster',
+                    tiles: [
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    ],
+                    tileSize: 256,
+                    maxzoom: 24,
+                    attribution: '&copy: <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>contributors',
+                },
+                    cogsen: {
+                    type: 'raster',
+                    tiles: [
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/LN/2025/11/S2B_T44NLN_20251130T051626_L2A/TCI.tif'
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen1: {
+                    type: 'raster',
+                    tiles: [
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/P/LR/2025/11/S2B_T44PLR_20251130T050743_L2A/TCI.tif',
+
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen2: {
+                    type: 'raster',
+                    tiles: [
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/P/MR/2025/11/S2B_T44PMR_20251130T050743_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen3: {
+                    type: 'raster',
+                    tiles: [
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/P/LQ/2025/11/S2B_T44PLQ_20251130T050743_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen4: {
+                    type: 'raster',
+                    tiles: [
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/LP/2025/11/S2B_T44NLP_20251130T050743_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen5: {
+                    type: 'raster',
+                    tiles: [
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/LP/2025/11/S2B_T44NLP_20251130T051626_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen7: {
+                    type: 'raster',
+                    tiles: [
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/P/MQ/2025/11/S2B_T44PMQ_20251130T050743_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen8: {
+                    type: 'raster',
+                    tiles: [
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/MP/2025/11/S2B_T44NMP_20251130T050743_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen9: {
+                    type: 'raster',
+                    tiles: [
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/MP/2025/11/S2B_T44NMP_20251130T051626_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+                    cogsen10:{
+                    type: 'raster',
+                    tiles:[
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/MN/2025/11/S2B_T44NMN_20251130T051626_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen11:{
+                    type: 'raster',
+                    tiles:[
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/LM/2025/11/S2B_T44NLM_20251130T051626_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen12:{
+                    type: 'raster',
+                    tiles:[
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/MM/2025/11/S2B_T44NMM_20251130T051626_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+                
+                    cogsen13:{
+                    type: 'raster',
+                    tiles:[
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/MP/2025/12/S2C_T44NMP_20251202T050609_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+ 
+                    cogsen14:{
+                    type: 'raster',
+                    tiles:[
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/MN/2025/12/S2C_T44NMN_20251202T050609_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen15:{
+                    type: 'raster',
+                    tiles:[
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/MM/2025/12/S2C_T44NMM_20251202T050609_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen16:{
+                    type: 'raster',
+                    tiles:[
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/P/NQ/2025/12/S2C_T44PNQ_20251202T050609_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen17:{
+                    type: 'raster',
+                    tiles:[
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/NP/2025/12/S2C_T44NNP_20251202T050609_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen18:{
+                    type: 'raster',
+                    tiles:[
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/NN/2025/12/S2C_T44NNN_20251202T050609_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+
+                    cogsen19:{
+                    type: 'raster',
+                    tiles:[
+                            'https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url=https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/44/N/NM/2025/12/S2C_T44NNM_20251202T050609_L2A/TCI.tif',
+                    ],
+                    tileSize: 256,
+                    minzoom: 7,
+                    maxzoom: 20,
+                    attribution: '&copy; Radiant Earth / Planet | &copy; Sentinel-2, Copernicus'
+                },
+  
+
+            }, 
+                layers: [
+                    {
+                        id: 'osm-layer',
+                        source: 'osm',
+                        type: 'raster',
+                    },       
+                    {
+                        id: 'sentinel-layer',
+                        type: 'raster',
+                        source: 'cogsen',
+                        paint: {
+                         'raster-opacity': zopacity1,
+//                         'raster-resampling': 'nearest',
+                        },         
+                        layout:{
+                            visibility:'none'
+                        },               
+                    },     
+                    {
+                        id: 'northwest-1',
+                        type: 'raster',
+                        source: 'cogsen1',
+                        paint: {
+                         'raster-opacity': zopacity1,
+//                         'raster-resampling': 'nearest',                         
+                        },   
+                        layout:{
+                            visibility:'none'
+                        },                     
+                    },                   
+                    {
+                        id: 'northeast-2',
+                        type: 'raster',
+                        source: 'cogsen2',
+                        paint: {
+                         'raster-opacity': zopacity1,
+//                         'raster-resampling': 'nearest',                         
+                        },  
+                        layout:{
+                            visibility:'none'
+                        },                      
+                    }, 
+                    {
+                        id: 'westnorth-3',
+                        type: 'raster',
+                        source: 'cogsen3',
+                        paint: {
+                         'raster-opacity': zopacity1,
+//                         'raster-resampling': 'nearest',
+                        },    
+                        layout:{
+                            visibility:'none'
+                        },                    
+                    }, 
+                    {
+                        id: 'westnorthlittle-4',
+                        type: 'raster',
+                        source: 'cogsen4',
+                        paint: {
+                         'raster-opacity': zopacity1,
+//                         'raster-resampling': 'nearest',
+                        },   
+                        layout:{
+                            visibility:'none'
+                        },                     
+                    }, 
+                    {
+                        id: 'westcentral-5',
+                        type: 'raster',
+                        source: 'cogsen5',
+                        paint: {
+                         'raster-opacity': zopacity1,
+//                         'raster-resampling': 'nearest',
+                        },     
+                        layout:{
+                            visibility:'none'
+                        },                   
+                    }, 
+                    {
+                        id: 'centralnorth-7',
+                        type: 'raster',
+                        source: 'cogsen7',
+                        paint: {
+                         'raster-opacity': zopacity1,
+//                         'raster-resampling': 'nearest',
+                        },    
+                        layout:{
+                            visibility:'none'
+                        },                    
+                    }, 
+                    {
+                        id: 'centralkandynorth-8',
+                        type: 'raster',
+                        source: 'cogsen8',
+                        paint: {
+                         'raster-opacity': zopacity1,
+//                         'raster-resampling': 'nearest',
+                        },    
+                        layout:{
+                            visibility:'none'
+                        },                    
+                    },                  
+                    
+                    {
+                        id: 'centralkandy-9',
+                        type: 'raster',
+                        source: 'cogsen9',
+                        paint: {
+                         'raster-opacity': zopacity1,
+//                         'raster-resampling': 'nearest',
+                        },     
+                        layout:{
+                            visibility:'none'
+                        },                   
+                    },
+
+                     {
+                        id: 'centralsoutheast-10',
+                        type: 'raster',
+                        source: 'cogsen10',
+                        paint: {
+                         'raster-opacity': zopacity1,
+                         'raster-resampling': 'nearest',
+                        },     
+                        layout:{
+                            visibility:'none'
+                        },                   
+                    },
+ 
+                    {
+                        id: 'southmostwest-11',
+                        type: 'raster',
+                        source: 'cogsen11',
+                        paint: {
+                         'raster-opacity': zopacity1,
+//                         'raster-resampling': 'nearest',
+                        },     
+                        layout:{
+                            visibility:'none'
+                        },                   
+                    },
+
+                    {
+                        id: 'southwest-12',
+                        type: 'raster',
+                        source: 'cogsen12',
+                        paint: {
+                         'raster-opacity': zopacity1,
+//                         'raster-resampling': 'nearest',
+                        },     
+                        layout:{
+                            visibility:'none'
+                        },                   
+                    },
+                   
+                    {
+                        id: 'centrallittlenorth-13',
+                        type: 'raster',
+                        source: 'cogsen13',
+                        paint: {
+                         'raster-opacity': zopacity2,
+//                         'raster-resampling': 'nearest',
+                        },     
+                        layout:{
+                            visibility:'none'
+                        },                   
+                    },
+                  
+                    {
+                        id: 'southinland-14',
+                        type: 'raster',
+                        source: 'cogsen14',
+                        paint: {
+                         'raster-opacity': zopacity2,
+//                         'raster-resampling': 'nearest',
+                        },     
+                        layout:{
+                            visibility:'none'
+                        },                   
+                    },
+                 
+                    {
+                        id: 'south-15',
+                        type: 'raster',
+                        source: 'cogsen15',
+                        paint: {
+                         'raster-opacity': zopacity2,
+//                         'raster-resampling': 'nearest',
+                        },     
+                        layout:{
+                            visibility:'none'
+                        },                   
+                    },
+                 
+                    {
+                        id: 'eastlittlenorth-16',
+                        type: 'raster',
+                        source: 'cogsen16',
+                        paint: {
+                         'raster-opacity': zopacity2,
+//                         'raster-resampling': 'nearest',
+                        },     
+                        layout:{
+                            visibility:'none'
+                        },                   
+                    },
+ 
+                    {
+                        id: 'eastcentral-17',
+                        type: 'raster',
+                        source: 'cogsen17',
+                        paint: {
+                         'raster-opacity': zopacity2,
+//                        'raster-resampling': 'nearest',
+                        },     
+                        layout:{
+                            visibility:'none'
+                        },                   
+                    },
+ 
+                    {
+                        id: 'eastsouth-18',
+                        type: 'raster',
+                        source: 'cogsen18',
+                        paint: {
+                         'raster-opacity': zopacity2,
+//                         'raster-resampling': 'nearest',
+                        },     
+                        layout:{
+                            visibility:'none'
+                        },                   
+                    },
+ 
+                    {
+                        id: 'southeast-19',
+                        type: 'raster',
+                        source: 'cogsen19',
+                        paint: {
+                         'raster-opacity': zopacity2,
+//                         'raster-resampling': 'nearest',
+                        },     
+                        layout:{
+                            visibility:'none'
+                        },                   
+                    },
+
+                ],
+            },
+        });
+
+const cogLayers=[
+    {
+        id:'sentinel-layer',
+        bbox:[79.1886,6.2415,80.1846,7.2371]
+    },
+    {
+        id:'northwest-1',
+        bbox:[79.175,8.954,80.1794,9.9504]
+    },
+    {
+        id:'northeast-2',
+        bbox:[80.0874,8.9572,81.0890,9.9514]
+    },
+    {
+        id:'westnorth-3',
+        bbox:[79.1805,8.0495,80.1814,9.0458]
+    },
+    {
+        id:'westnorthlittle-4',
+        bbox:[79.1848,7.1453,80.1831,8.1412]
+    },
+    {
+        id:'westcentral-5',
+        bbox:[79.1848,7.1453,80.1831,8.1412]
+    },
+    {
+        id:'centralnorth-7',
+        bbox:[80.0898,8.0526,81.0888,9.0467]
+    },
+    {
+        id:'centralkandynorth-8',
+        bbox:[80.0919,7.1479,81.0886,8.1420]
+    },
+    {
+        id:'centralkandy-9',
+        bbox:[80.0918,7.1479,81.0886,8.1420]
+    },
+    {
+        id:'centralsoutheast-10',
+        bbox:[80.0938,6.2438,81.0884,7.2378]
+    },   
+   {
+        id:'southmostwest-11',
+        bbox:[79.1920,5.3371,80.1859,6.3324]
+    },   
+   {
+        id:'southwest-12',
+        bbox:[80.0955,5.3391,81.0882,6.3330]
+    },   
+   {
+        id:'centrallittlenorth-13',
+        bbox:[80.0919,7.1479,81.0886,8.1420]
+    },   
+   {
+        id:'southinland-14',
+        bbox:[80.0938,6.2438,81.0884,7.2378]
+    },   
+   {
+        id:'south-15',
+        bbox:[80.0955,5.3391,81.0882,6.3330]
+    },   
+   {
+        id:'eastlittlenorth-16',
+        bbox:[80.9998,8.0524,81.9988,9.0467]
+    },   
+   {
+        id:'eastcentral-17',
+        bbox:[80.9998,7.1477,81.9965,8.1420]
+    },   
+   {
+        id:'eastsouth-18',
+        bbox:[80.9998,6.2436,81.9944,7.2378]
+    },   
+   {
+        id:'southeast-19',
+        bbox:[80.9998,5.3389,81.9925,6.3330]
+    },   
+
+]
+
+function getMapBBox() {
+  const b = map.getBounds();
+  return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+}
+
+function intersects(b1, b2) {
+  return !(
+    b2[0] > b1[2] || // west > east
+    b2[2] < b1[0] || // east < west
+    b2[1] > b1[3] || // south > north
+    b2[3] < b1[1]
+  );
+}
+
+function expandBBox(bbox, margin = 0.1) {
+  return [
+    bbox[0] - margin,
+    bbox[1] - margin,
+    bbox[2] + margin,
+    bbox[3] + margin
+  ];
+}
+
+function forceRasterRefresh(layerId) {
+  const op = map.getPaintProperty(layerId, 'raster-opacity');
+  map.setPaintProperty(layerId, 'raster-opacity', op + 0.00001);
+  map.setPaintProperty(layerId, 'raster-opacity', op);
+}
+
+function updateCogVisibility() {
+  const zoom = map.getZoom();
+  const mapBBox = expandBBox(getMapBBox(), 0.15);
+  const center = map.getCenter();
+
+  cogLayers.forEach(layer => {
+    let visible = false;
+    const containsCenter = 
+      center.lng >= layer.bbox[0] &&
+      center.lng <= layer.bbox[2] &&
+      center.lat >= layer.bbox[1] &&
+      center.lat <= layer.bbox[3];        
+
+    if (zoom <10) {
+        visible =intersects(mapBBox,layer.bbox);
+    } else {
+      if (containsCenter) {
+            visible = true;
+      }
+    }
+
+    map.setLayoutProperty(
+      layer.id,
+      'visibility',
+      visible ? 'visible' : 'none'
+    );
+
+    if (visible) {
+      forceRasterRefresh(layer.id);
+    }
+  });
+
+}
+
+
+const zoomIndicator = document.getElementById('zoom-indicator');
+
+function updateZoomIndicator() {
+  zoomIndicator.textContent = `Zoom: ${map.getZoom().toFixed(1)}`;
+}
+
+map.on('load', () => {
+    map.on('move', updateCogVisibility);
+//    map.on('idle', updateCogVisibility);
+
+    map.on('zoomend', updateZoomIndicator);
+});
+
+    transparencyInput.addEventListener('change', (e) => {
+        transparencyValueSpan.innerHTML =`${transparencyInput.value / 10} `;
+        zopacity1=parseFloat(transparencyInput.value/10);
+        map.setPaintProperty('sentinel-layer','raster-opacity',zopacity1);
+        map.setPaintProperty('northwest-1','raster-opacity',zopacity1);      
+        map.setPaintProperty('northeast-2','raster-opacity',zopacity1);  
+        map.setPaintProperty('westnorth-3','raster-opacity',zopacity1);
+        map.setPaintProperty('westnorthlittle-4','raster-opacity',zopacity1);
+        map.setPaintProperty('westcentral-5','raster-opacity',zopacity1);
+        map.setPaintProperty('centralnorth-7','raster-opacity',zopacity1);
+        map.setPaintProperty('centralkandynorth-8','raster-opacity',zopacity1);
+        map.setPaintProperty('centralkandy-9','raster-opacity',zopacity1);
+        map.setPaintProperty('centralsoutheast-10','raster-opacity',zopacity1);
+        map.setPaintProperty('southmostwest-11','raster-opacity',zopacity1);
+        map.setPaintProperty('southwest-12','raster-opacity',zopacity1);
+        },
+    );
+
+
+
+    transparencyInput2.addEventListener('change', (e) => {
+        transparencyValueSpan2.innerHTML =`${transparencyInput2.value / 10} `;
+        zopacity2=parseFloat(transparencyInput2.value/10);
+        map.setPaintProperty('centrallittlenorth-13','raster-opacity',zopacity2);
+        map.setPaintProperty('southinland-14','raster-opacity',zopacity2);
+        map.setPaintProperty('south-15','raster-opacity',zopacity2);
+        map.setPaintProperty('eastlittlenorth-16','raster-opacity',zopacity2);
+        map.setPaintProperty('eastcentral-17','raster-opacity',zopacity2);
+        map.setPaintProperty('eastsouth-18','raster-opacity',zopacity2);
+        map.setPaintProperty('southeast-19','raster-opacity',zopacity2);
+        },
+    );
+
+    const layonoff1=document.getElementById("osm-layer");
+    
+    layonoff1.addEventListener('click',() => {
+        if(layonoff1.checked==true) {
+            map.setLayoutProperty("osm-layer", "visibility", "visible");
+        } else {
+            map.setLayoutProperty("osm-layer", "visibility", "none");
+    //        alert(" check box chenged to off");    
+        }   
+    });
+
+    urlInput.addEventListener('change', () => {
+        const inputUrl=urlInput.value.trim();
+        if (!inputUrl.toLowerCase().endsWith('.tif') && !inputUrl.toLowerCase().endsWith('.tiff')) {
+            alert('拡張子が .tif のURLを入力してください');
+            return; // それ以降の処理を中断
+        }
+
+        console.log(urlInput.value);
+        const addedImage='https://tiles.rdnt.io/tiles/{z}/{x}/{y}?url='+urlInput.value;
+        console.log(addedImage);
+
+        const addLayerFunc = () => {
+            if (map.getSource('newimage')) {
+                if (map.getLayer('newimage-layer')) {
+                    map.removeLayer('newimage-layer');
+                }
+                map.removeSource('newimage');
+            }
+
+            map.addSource('newimage', {
+                type: 'raster',
+                tiles: [addedImage],
+                tileSize: 256,
+                minzoom: 0
+            });
+
+            map.addLayer({
+                id: 'newimage-layer',
+                source: 'newimage',
+                type: 'raster',
+                paint: {
+                    'raster-opacity': 1.0,
+                },
+            });
+
+            map.flyTo({
+                center:[0,0],
+                zoom: 1,
+            });
+        };
+
+        if (map.loaded()) {
+            addLayerFunc();
+        } else {
+            map.once('load', addLayerFunc);
+        }
+    });
+
+    </script>
+    </body> 
+</html>
